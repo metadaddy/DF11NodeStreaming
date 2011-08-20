@@ -1,0 +1,12 @@
+This is the code from my Dreamforce 2011 session: 'Event-Driven Programming 
+with Node.js and the Force.com Streaming API'.
+
+Prerequisites
+-------------
+
+node modules: express, request (install them with npm)
+
+Aashay Desai's tweaked Faye: https://github.com/aashay/faye - build it 
+according to the instructions, create a directory DF11NodeStreaming/node/faye, 
+then drop the contents of the faye/build directory in the new faye 
+subdirectory.

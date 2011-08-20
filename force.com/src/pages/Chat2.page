@@ -1,0 +1,125 @@
+<apex:page controller="ChatController">
+<head>
+    <apex:includeScript value="{!$Resource.cometd}"/>
+    <apex:includeScript value="{!$Resource.jquery}"/>
+    <apex:includeScript value="{!$Resource.jquery_json}"/>
+    <apex:includeScript value="{!$Resource.jquery_cometd}"/>
+    <style type="text/css">
+        .internal {
+            color: Blue;
+        }
+
+        .external {
+            color: Green;
+        }
+
+        .sms {
+            color: Red;
+        }
+    </style>
+</head>
+
+<script type='text/javascript'>
+    function submitEnter(myField, evt)  {
+        if (null == evt) {
+            evt = window.event;
+        }
+        evt = (evt) ? evt : event; //IE and others behave differently
+        var target = (evt.target) ? evt.target : evt.srcElement;
+        var form = target.form;
+        var charCode = (evt.charCode) ? evt.charCode :
+            ((evt.which) ? evt.which : evt.keyCode);
+        if (charCode == 13 || charCode == 3) {
+            send();
+            return false;
+        }
+        return true;
+    }
+    
+    function getCurrentTime() {
+        return (new Date()).toTimeString().split(' ')[0];
+    }
+    
+    (function($){
+        var _connected = false;
+        var _subscription = null;
+
+        function _connectionSucceeded()
+        {
+            $('#status').html(getCurrentTime()+' Connected');
+            
+            if (_subscription) {
+                $.cometd.unsubscribe(_subscription);
+            }
+            
+            // subscribe to a certain channel/topic. Message contains
+            // the message sent back from the server when there has been
+            // an appropriate change made (JSON encoding)
+            _subscription = $.cometd.subscribe('/Messages', function(message) {
+                update();
+            });
+        }
+
+        function _connectionBroken()
+        {
+            $('#status').html(getCurrentTime()+' Disconnected');
+        }
+
+        function _metaConnect(message)
+        {
+            var wasConnected = _connected;
+            _connected = message.successful === true;
+            if (!wasConnected && _connected)
+            {
+                _connectionSucceeded();
+            }
+            else if (wasConnected && !_connected)
+            {
+                _connectionBroken();
+            }
+        }
+
+        $(document).ready(function() {
+            // We're here!
+            join();
+            
+            // Call action function on page unload
+            window.onunload = function(){
+                leave();
+            };
+            
+            // Listen for a successful connection
+            $.cometd.addListener('/meta/connect', _metaConnect);
+            
+            //Connect to the appropriate server.
+            $.cometd.init('https://'+window.location.hostname+'/cometd');
+        });
+    })(jQuery)
+    </script>
+    <h1>Chat Page for {!nickname}</h1>
+    <p><apex:image id="profileImage" url="{!profileImageUrl}" /></p>
+    <apex:form >
+        <apex:actionFunction name="update" 
+            rerender="messagePanel" focus="textInput"/>
+        <apex:actionFunction name="send" 
+            action="{!send}" rerender="textInput, messagePanel" 
+            focus="textInput"/>
+        <apex:actionFunction name="join" action="{!join}"
+            rerender="textInput, messagePanel"/>
+        <apex:actionFunction name="leave" action="{!leave}"
+            rerender="textInput, messagePanel"/>
+        <apex:inputText id="textInput" value="{!text}" 
+            onkeypress="return submitEnter(this, event);" />
+        <apex:commandButton value="Send" action="{!send}" 
+            rerender="textInput, messagePanel" 
+            oncomplete="document.getElementById('{!$Component.textInput}').focus();"/>
+    </apex:form>
+    <apex:outputPanel title="Messages" id="messagePanel">
+        <apex:dataTable value="{!messages}" var="msg">
+            <apex:column >
+                <span class="{!msg.Source__c}"><b>{!IF( NOT( ISNULL(msg.Sender__c) ), msg.Sender__c + ': ', '' )}</b>{!msg.Text__c}</span>
+            </apex:column>
+        </apex:dataTable>
+    </apex:outputPanel>
+    <p><b>Status: </b><span id="status">Starting up...</span></p>
+</apex:page>

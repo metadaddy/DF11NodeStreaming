@@ -1,0 +1,8 @@
+{
+  "name": "node-streaming",
+  "version": "0.0.1",
+  "dependencies": {
+	"express": ">= 2.2.0",
+	"request": ">= 2.0.0"
+  }
+}

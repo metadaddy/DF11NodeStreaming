@@ -1,0 +1,37 @@
+<apex:page controller="ChatController" action="{!join}">
+    <script type='text/javascript'>
+    function submitEnter(myField, evt)  {
+        if (null == evt) {
+            evt = window.event;
+        }
+        evt = (evt) ? evt : event; //IE and others behave differently
+        var target = (evt.target) ? evt.target : evt.srcElement;
+        var form = target.form;
+        var charCode = (evt.charCode) ? evt.charCode :
+            ((evt.which) ? evt.which : evt.keyCode);
+        if (charCode == 13 || charCode == 3) {
+            doSend();
+            return false;
+        }
+        return true;
+    }
+    </script>
+    <h1>Chat Page</h1>
+    <apex:form >
+        <apex:actionFunction name="doSend" 
+            action="{!send}" rerender="textInput, messagePanel" 
+            focus="textInput"/>
+        <apex:inputText id="textInput" value="{!text}" 
+            onkeypress="return submitEnter(this, event);" />
+        <apex:commandButton value="Send" action="{!send}" 
+            rerender="textInput, messagePanel" 
+            oncomplete="document.getElementById('{!$Component.textInput}').focus();"/>
+    </apex:form>
+    <apex:outputPanel title="Messages" id="messagePanel">
+        <apex:dataTable value="{!messages}" var="msg">
+            <apex:column >
+                <b>{!IF( NOT( ISNULL(msg.Sender__c) ), msg.Sender__c + ': ', '' )}</b>{!msg.Text__c}
+            </apex:column>
+        </apex:dataTable>
+    </apex:outputPanel>
+</apex:page>
